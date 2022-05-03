@@ -168,6 +168,18 @@ node_t *rbtree_min(const rbtree *t) {
   return p;
 }
 
+// root기준 서브트리에서의 최소 노드 포인터 리턴(successor 구하기 위해 구현)
+node_t *subtree_min(rbtree *t, node_t *root) {
+  node_t *p = root->parent;
+  
+  while (root != t->nil) {
+    p = root;
+    root = root->left;
+  }
+
+  return p;
+}
+
 node_t *rbtree_max(const rbtree *t) {
   // TODO: implement find
   node_t *p = t->nil; // x의 부모
@@ -181,9 +193,53 @@ node_t *rbtree_max(const rbtree *t) {
   return p;
 }
 
-int rbtree_erase(rbtree *t, node_t *p) {
+void rbtree_transplant(rbtree *t, node_t *u, node_t *v) { // v노드를 u자리로
+  // u의 부모를 v와 연결
+  if (u->parent == t->nil) // u가 root였다면
+    t->root = v;
+  else if (u == u->parent->left)
+    u->parent->left = v;
+  else
+    u->parent->right = v;
+  v->parent = u->parent;
+}
+
+void rbtree_delete_fixup(rbtree *t, node_t *x) {
+
+}
+
+int rbtree_erase(rbtree *t, node_t *z) {
   // TODO: implement erase
-  
+  node_t *y = z;
+  node_t *x = NULL;
+  color_t y_original_color = y->color;
+  if (z->left == t->nil) { // 삭제할 노드의 왼쪽 자식이 없는 경우
+    x = z->right;
+    rbtree_transplant(t, z, z->right); // 삭제될 노드의 오른쪽 자식을 삭제될 노드 자리에 넣어줌
+  }
+  else if (z->right == t->nil) { // 삭제할 노드의 오른쪽 자식이 없는 경우
+    x = z->left;
+    rbtree_transplant(t, z, z->left);
+  }
+  else { // 자식이 둘 다 있는 경우
+    y = subtree_min(t, z->right); // successor
+    y_original_color = y->color;
+    x = y->right;
+    if (y->parent == z) // z의 succ이 z의 바로 오른쪽 자식이었던 경우
+      x->parent = y;
+    else {
+      rbtree_transplant(t, y, y->right); // y(succ)의 오른쪽 자식이 y의 자리를 차지(succ은 올라가기 때문에)
+      y->right = z->right; // succ(y)을 지우는 노드 위치로 올려주기
+      y->right->parent = y;
+    }
+    rbtree_transplant(t, z, y);
+    y->left = z->left; // succ을 삭제할 z자리로 완전히 옮겨줌
+    y->left->parent = y;
+    y->color = z->color;
+  }
+  if (y_original_color == RBTREE_BLACK) // 실질적으로 삭제된 노드가 검정색이었다면 고쳐줘야함
+    rbtree_delete_fixup(t, x);
+
   return 0;
 }
 
