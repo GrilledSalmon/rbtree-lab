@@ -2,12 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 rbtree *new_rbtree(void) {
   rbtree *p = (rbtree *)calloc(1, sizeof(rbtree));
   // TODO: initialize struct if needed
   node_t *nil = (node_t *)malloc(sizeof(node_t)); // nil노드 생성
   nil->color = RBTREE_BLACK;
   p->nil = p->root = nil;
+  p->root->right = p->root->left = p->root->parent = nil; // root의 자식, 부모 nil로
 
   return p;
 }
@@ -65,8 +67,8 @@ void delete_rbtree(rbtree *t) {
   // TODO: reclaim the tree nodes's memory
   post_order_delete(t, t->root); // 딸려 있는 노드 전체 free
   free(t->nil); // nil노드 free
-  free(t); // 트리 free
   t->nil = NULL;
+  free(t); // 트리 free
   t = NULL;
 }
 
@@ -78,7 +80,7 @@ void rbtree_insert_fixup(rbtree *t, node_t *z) {
       if (y->color == RBTREE_RED) {
         z->parent->color = RBTREE_BLACK;
         y->color = RBTREE_BLACK;
-        z->parent->parent->color = RBTREE_BLACK;
+        z->parent->parent->color = RBTREE_RED;
         z = z->parent->parent;
       }
       else {
@@ -96,17 +98,17 @@ void rbtree_insert_fixup(rbtree *t, node_t *z) {
       if (y->color == RBTREE_RED) {
         z->parent->color = RBTREE_BLACK;
         y->color = RBTREE_BLACK;
-        z->parent->parent->color = RBTREE_BLACK;
+        z->parent->parent->color = RBTREE_RED;
         z = z->parent->parent;
       }
       else {
         if (z == z->parent->left) {
           z = z->parent;
-          left_rotate(t, z);
+          right_rotate(t, z);
         }
         z->parent->color = RBTREE_BLACK;
         z->parent->parent->color = RBTREE_RED;
-        right_rotate(t, z->parent->parent);
+        left_rotate(t, z->parent->parent);
       }
     }
   }
@@ -116,14 +118,11 @@ void rbtree_insert_fixup(rbtree *t, node_t *z) {
 
 node_t *rbtree_insert(rbtree *t, const key_t key) {
   // TODO: implement insert
-  node_t *z = (node_t *)malloc(sizeof(node_t)); // 삽입할 노드
-  z->color = RBTREE_RED;
-  z->key = key;
-  z->left = z->right = t->nil;
-
+  node_t *z = (node_t *)malloc(sizeof(node_t)); // 삽입할 노드 만들어줌
   node_t *y = t->nil; // 삽입될 노드의 부모
   node_t *x = t->root; // temp..?
-  
+  z->key = key;
+
   while (x != t->nil){
     y = x;
     if (z->key < x->key)
@@ -138,9 +137,11 @@ node_t *rbtree_insert(rbtree *t, const key_t key) {
     y->left = z;
   else
     y->right = z;
-  
-  rbtree_insert_fixup(t, z);
 
+  z->color = RBTREE_RED;
+  z->left = z->right = t->nil;
+
+  rbtree_insert_fixup(t, z);
   return z; // 삽입된 노드의 포인터
 }
 
@@ -241,7 +242,7 @@ void rbtree_delete_fixup(rbtree *t, node_t *x) {
       if (w->color == RBTREE_RED) { // 형제가 붉은 색이면(경우 1)
         w->color = RBTREE_BLACK;
         x->parent->color = RBTREE_RED;
-        left_rotate(t, x->parent);
+        right_rotate(t, x->parent);
         w = x->parent->left;
       }
       if (w->right->color == RBTREE_BLACK && w->left->color == RBTREE_BLACK) {
@@ -252,13 +253,13 @@ void rbtree_delete_fixup(rbtree *t, node_t *x) {
         if (w->left->color == RBTREE_BLACK) {
           w->right->color = RBTREE_BLACK;
           w->color = RBTREE_RED;
-          right_rotate(t, w);
+          left_rotate(t, w);
           w = x->parent->left;
         }
         w->color = x->parent->color;
         x->parent->color = RBTREE_BLACK;
         w->left->color = RBTREE_BLACK;
-        left_rotate(t, x->parent);
+        right_rotate(t, x->parent);
         x = t->root;
       }
     }
@@ -299,11 +300,23 @@ int rbtree_erase(rbtree *t, node_t *z) {
   }
   if (y_original_color == RBTREE_BLACK) // 실질적으로 삭제된 노드가 검정색이었다면 고쳐줘야함
     rbtree_delete_fixup(t, x);
-
+  free(z); // 위 코드를 보면 z가 전부 transplant에 의해 부모를 잃었음(정확히는 부모가 z를 가리키지 않음)
+  z = NULL;
   return 0;
+}
+
+void in_order(const rbtree *t, node_t *node, key_t *arr, int *i) { 
+  if (node != t->nil){
+    in_order(t, node->left, arr, i);
+    arr[*i] = node->key;
+    (*i)++;
+    in_order(t, node->right, arr, i);
+  }
 }
 
 int rbtree_to_array(const rbtree *t, key_t *arr, const size_t n) {
   // TODO: implement to_array
+  int i  = 0;
+  in_order(t, t->root, arr, &i);
   return 0;
 }
