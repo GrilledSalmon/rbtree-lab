@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 enum Rainbow{
     red=1,
@@ -10,21 +11,43 @@ enum Rainbow{
     violet
 };
 
+void mal_test(double **p) {
+    *p = (double *)malloc(0);
+    // *p = (double *)calloc(1,0);
+    free(*p);
+    (*p)[0] = 3;
+    (*p)[1] = 4;
+    (*p)[2] = 5;
+    // (*p)[1000] = 5;
+    // p[1000] = 10;
+    // for (int i=0;i<3;i++) {
+    //     printf("%d \n", p[i]);
+    //     printf("%p\n", &p[i]);
+    // }
+    // printf("%d\n", p[1000]);
+    // printf("%p\n", &p[1000]);    
+    // return p;
+}
 
-int main()
+void main()
 {
-    enum Rainbow rainbow;
 
-    rainbow = yellow;
+    // int *p = (void *)malloc(4);
 
-    printf("%d\n", rainbow);
+    // p[0] = 3;
+    // p[1] = 4;
+    // p[2] = 5;
+    
+    double *p;
+    mal_test(&p);
+    
+    for (int i=0;i<4;i++) {
+        printf("%f \n", p[i]);
+        printf("%p\n", &p[i]);
+    }   
+    // printf("%d\n", p[1000]);
+    // printf("%p\n", &p[1000]);
 
-    printf("Hello, World!\n");
-    printf("Hello. - from Yoonwoo.\n");
-
-    int *p = NULL;
-    *p = 1;
-
-    return 0;
+    // return 0;
 }
 
