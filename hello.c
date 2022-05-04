@@ -22,6 +22,9 @@ int main()
     printf("Hello, World!\n");
     printf("Hello. - from Yoonwoo.\n");
 
+    int *p = NULL;
+    *p = 1;
 
     return 0;
 }
+
